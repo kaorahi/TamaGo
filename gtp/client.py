@@ -29,7 +29,8 @@ class GtpClient: # pylint: disable=R0902,R0903
     def __init__(self, board_size: int, superko: bool, model_file_path: str, \
         use_gpu: bool, policy_move: bool, use_sequential_halving: bool, \
         komi: float, mode: TimeControl, visits: int, const_time: float, \
-        time: float, batch_size: int, tree_size: int, cgos_mode: bool): # pylint: disable=R0913
+        time: float, batch_size: int, tree_size: int, cgos_mode: bool, \
+        step_analysis: bool): # pylint: disable=R0913
         """Go Text Protocolクライアントの初期化をする。
 
         Args:
@@ -47,6 +48,7 @@ class GtpClient: # pylint: disable=R0902,R0903
             batch_size (int): 探索時のニューラルネットワークのミニバッチサイズ。
             tree_size (int): 探索木を構成するノードの最大数。
             cgos_mode (bool): 全ての石を打ち上げるまでパスしない設定フラグ。
+            step_analysis (bool): analyzeコマンドでPVのかわりにMCTSの過程を提示する設定フラグ。
         """
         self.gtp_commands = [
             "version",
@@ -99,7 +101,8 @@ class GtpClient: # pylint: disable=R0902,R0903
             self.network = load_network(model_file_path, use_gpu)
             self.use_network = True
             self.mcts = MCTSTree(network=self.network, batch_size=batch_size, \
-                tree_size=tree_size, cgos_mode=cgos_mode)
+                tree_size=tree_size, cgos_mode=cgos_mode, \
+                step_analysis=step_analysis)
         except FileNotFoundError:
             print_err(f"Model file {model_file_path} is not found")
         except RuntimeError:

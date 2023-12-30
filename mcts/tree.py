@@ -26,7 +26,8 @@ class MCTSTree: # pylint: disable=R0902
     """モンテカルロ木探索の実装クラス。
     """
     def __init__(self, network: DualNet, tree_size: int=MCTS_TREE_SIZE, \
-        batch_size: int=NN_BATCH_SIZE, cgos_mode: bool=False):
+        batch_size: int=NN_BATCH_SIZE, cgos_mode: bool=False, \
+        step_analysis: bool=False):
         """MCTSTreeクラスのコンストラクタ。
 
         Args:
@@ -42,7 +43,8 @@ class MCTSTree: # pylint: disable=R0902
         self.current_root = 0
         self.batch_size = batch_size
         self.cgos_mode = cgos_mode
-
+        self.step_analysis = step_analysis
+        self.last_step_analysis_pv = None
 
     def search_best_move(self, board: GoBoard, color: Stone, time_manager: TimeManager, \
         analysis_query: Dict[str, Any]) -> int:
@@ -143,6 +145,8 @@ class MCTSTree: # pylint: disable=R0902
         interval = analysis_query.get("interval", 0)
         threshold = time_manager.get_num_visits_threshold(color)
 
+        self._set_step_analyzing(analysis_query.get("mode") == "lz")
+
         for counter in range(threshold):
             copy_board(dst=search_board,src=board)
             start_color = color
@@ -159,7 +163,8 @@ class MCTSTree: # pylint: disable=R0902
                        (counter == threshold - 1 or elapsed > interval):
                     analysis_clock = time.time()
                     mode = analysis_query.get("mode", "lz")
-                    sys.stdout.write(root.get_analysis(board, mode, self.get_pv_lists))
+                    if not self._step_analyzing():
+                        sys.stdout.write(root.get_analysis(board, mode, self.get_pv_lists))
                     sys.stdout.flush()
 
                 if analysis_query.get("ponder", False):
@@ -170,7 +175,8 @@ class MCTSTree: # pylint: disable=R0902
         if len(analysis_query) > 0 and interval == 0:
             root = self.node[self.current_root]
             mode = analysis_query.get("mode", "lz")
-            sys.stdout.write(root.get_analysis(board, mode, self.get_pv_lists))
+            if not self._step_analyzing():
+                sys.stdout.write(root.get_analysis(board, mode, self.get_pv_lists))
             sys.stdout.flush()
 
 
@@ -280,6 +286,7 @@ class MCTSTree: # pylint: disable=R0902
                 leaf = reverse_path[0]
 
                 self.node[leaf[0]].set_leaf_value(leaf[1], value)
+                self._step_analyze_maybe(path, board)
 
                 for index, child_index in reverse_path:
                     self.node[index].update_child_value(child_index, value)
@@ -445,6 +452,58 @@ class MCTSTree: # pylint: disable=R0902
             return pv_list
 
         return self.get_best_move_sequence(pv_list, next_index)
+
+
+    def _step_analyzing(self) -> bool:
+        return self.step_analysis and (self.last_step_analysis_pv is not None)
+
+    def _set_step_analyzing(self, flag: bool) -> NoReturn:
+        self.last_step_analysis_pv = [] if flag else None
+
+    def _step_analyze_maybe(self, path, board):
+        if not self._step_analyzing():
+            return
+        root_index, i = path[0]
+        root = self.node[root_index]
+        if root.children_visits[i] == 0:
+            return
+        children_status_list = root.get_analysis_status_list(board, self.get_pv_lists)
+        coordinate = board.coordinate
+        pos = root.action[i]
+        move = coordinate.convert_to_gtp_format(pos)
+        pv = [coordinate.convert_to_gtp_format(self.node[index].action[child_index]) for (index, child_index) in path]
+        pv_visits = [str(self.node[index].children_visits[child_index] + 1) for (index, child_index) in path]
+        pv_winrate = [self._get_winrate_str(index, child_index, depth) for depth, (index, child_index) in enumerate(path)]
+        for k in range(1, len(path) + 1):
+            if pv[:k] == self.last_step_analysis_pv[:k]:
+                continue
+            pv_str = " ".join(pv[:k])
+            pv_visits_str = " ".join(pv_visits[:k])
+            pv_winrate_str = " ".join(pv_winrate[:k])
+            fake_status_list = [status.copy() for status in children_status_list]
+            for status in fake_status_list:
+                if status["move"] == move:
+                    status["pv"] = pv_str
+                    status["pvVisits"] = pv_visits_str
+                    status["pvWinrate"] = pv_winrate_str
+                    status["order"] = 0
+                    break
+                else:
+                    status["order"] += 1
+            fake_status_list.sort(key=lambda status: status["order"])
+            sys.stdout.write(root.get_analysis_from_status_list("lz", fake_status_list))
+            sys.stdout.flush()
+            time.sleep(0.3)
+        self.last_step_analysis_pv = pv
+        time.sleep(1.5)
+
+    def _get_winrate_str(self, index, child_index, depth):
+        node = self.node[index]
+        i = child_index
+        visits = node.children_visits[i]
+        value = node.children_value_sum[i] / visits if visits > 0 else node.children_value[i]
+        winrate = value if depth % 2 == 0 else 1.0 - value
+        return str(int(10000 * winrate))
 
 
 def get_tentative_policy(candidates: List[int]) -> Dict[int, float]:
