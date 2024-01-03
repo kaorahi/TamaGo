@@ -474,7 +474,9 @@ class GtpClient: # pylint: disable=R0902,R0903
         """
         arg = ' '.join(arg_list).strip()
         around_pv = (arg == 'aroundPV true')
+        respond_success('', ongoing=True)
         print(json.dumps(self.mcts.to_dict(around_pv, self.board, self.coordinate)))
+        print("")
 
 
     def run(self) -> NoReturn: # pylint: disable=R0912,R0915
