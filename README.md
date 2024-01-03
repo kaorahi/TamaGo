@@ -1,3 +1,23 @@
+# Tree visualization with TamaGo
+
+100 visits
+
+<a href="img/tree_sample100.png"><img width="20%" src="img/tree_sample100.png"></a>
+
+1000 visits
+
+<a href="img/tree_sample1000.jpg"><img width="60%" src="img/tree_sample1000.jpg"></a>
+
+Usage:
+
+Install graphviz.
+
+```
+pip install -r requirements.txt
+```
+
+Then run `./plot_tree.py` and read the usage.
+
 # TamaGo
 TamaGo is a Go (Weiqi, Baduk) engine implemented in Python.
 TamaGo has following features,

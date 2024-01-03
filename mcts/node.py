@@ -217,6 +217,27 @@ class MCTSNode: # pylint: disable=R0902, R0904
         self.children_index[index] = child_index
 
 
+    def get_child_dict(self, index):
+        dic = {
+            "action": self.action[index],
+            "index": self.children_index[index],
+            "value": self.children_value[index],
+            "visits": self.children_visits[index],
+            "policy": self.children_policy[index],
+            "virtual_loss": self.children_virtual_loss[index],
+            "value_sum": self.children_value_sum[index],
+        }
+        self._make_serializable(dic)
+        return dic
+
+    def _make_serializable(self, dic):
+        # 「TypeError: Object of type int32 is not JSON serializable」
+        # を防ぐため int に変換
+        for key in dic:
+            if isinstance(dic[key], np.int32):
+                dic[key] = int(dic[key])
+
+
     def print_search_result(self, board: GoBoard, pv_dict: Dict[str, List[str]]) -> NoReturn:
         """探索結果を表示する。探索した手の探索回数とValueの平均値を表示する。
 

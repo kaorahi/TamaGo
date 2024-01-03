@@ -447,6 +447,49 @@ class MCTSTree: # pylint: disable=R0902
         return self.get_best_move_sequence(pv_list, next_index)
 
 
+    def to_dict(self, aroundPV, board, coord):
+        root_index = self.current_root
+        root_dic = {"order": 0, "level": 0}
+        parents_indices_pool = [root_index]
+        dictified_nodes = {root_index: root_dic}
+        while parents_indices_pool:
+            index = parents_indices_pool.pop()
+            node = self.node[index]
+            dic = dictified_nodes[index]
+            # aroundPV が指定された場合は、最善応手系列上の各ノードと
+            # その直下の子たちだけ拾う。
+            # つまり、order > 0 のノードについては子孫を結果に含めない。
+            if aroundPV and dic["order"] > 0:
+                continue
+            level = dic["level"] + 1  # 探索木上の深さ
+            children_dicts = _get_children_dicts(index, node, level, coord)
+            children_indices = [d["index"] for d in children_dicts]
+            dic["children_indices"] = children_indices  # 利便性のため属性を追加
+            parents_indices_pool += children_indices
+            dictified_nodes.update({d['index']: d for d in children_dicts})
+        del dictified_nodes[root_index]  # ルートノードは結果に含めない
+        return {
+            "node_by_index": dictified_nodes,
+            "to_move": 'black' if board.get_to_move() == Stone.BLACK else 'white',
+        }
+
+
+def _get_children_dicts(index, node, level, coord):
+    num_children = node.get_num_children()
+    children_dicts = [node.get_child_dict(i) for i in range(num_children) \
+                      if node.get_child_index(i) != NOT_EXPANDED]
+    # visits 順で order を設定するためにソート
+    children_dicts.sort(key=lambda d: d["visits"], reverse=True)
+    for order, d in enumerate(children_dicts):
+        # グラフ描画などの際に使いやすいよう属性を追加
+        d["level"] = level
+        d["order"] = order
+        d["parent_index"] = index
+        d["gtp_move"] = coord.convert_to_gtp_format(d["action"])
+        d["mean_value"] = d["value_sum"] / d["visits"]
+    return children_dicts
+
+
 def get_tentative_policy(candidates: List[int]) -> Dict[int, float]:
     """ニューラルネットワークの計算が行われるまでに使用するPolicyを取得する。
 
