@@ -1,5 +1,7 @@
 # Animate MCTS steps with TamaGo and LizGoban
 
+https://github.com/kaorahi/TamaGo/assets/38910552/9b1e8f5f-c76c-43de-b646-57ee1090ab64
+
 1. Download and setup this branch of TamaGo.
 
 2. Download and setup the corresponding branch of LizGoban as follows.
