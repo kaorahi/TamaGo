@@ -1,3 +1,24 @@
+# Animate MCTS steps with TamaGo and LizGoban
+
+1. Download and setup this branch of TamaGo.
+
+2. Download and setup the corresponding branch of LizGoban as follows.
+
+```
+git clone https://github.com/kaorahi/lizgoban.git
+cd lizgoban
+git checkout mcts_step
+npm install
+```
+
+3. Run the following command.
+
+```
+npm start -- -j '{"preset": [{"engine": ["/bin/env", "python3", "/PATH/TO/tamago/main.py", "--step-analysis", "true", "--model", "/PATH/TO/tamago/model/model.bin"], "wait_for_startup": false, "komi": 7, "board_size": 9}]}'
+```
+
+To change the speed, do `git grep sleep` in the tamago repository and modify the source code.
+
 # TamaGo
 TamaGo is a Go (Weiqi, Baduk) engine implemented in Python.
 TamaGo has following features,
