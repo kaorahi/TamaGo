@@ -495,6 +495,7 @@ class GtpClient: # pylint: disable=R0902,R0903
         """盤面の初期化
         """
         self.board.clear()
+        self.mcts.invalidate()
 
     def _put_stone(self, pos: int, color: Stone) -> NoReturn:
         """指定された座標に指定された色の石を石を置く。
@@ -504,6 +505,7 @@ class GtpClient: # pylint: disable=R0902,R0903
             color (Stone): 置く石の色。
         """
         self.board.put_stone(pos, color)
+        self.mcts.invalidate()
 
     def _put_handicap_stone(self, pos: int, color: Stone) -> NoReturn:
         """指定された座標に指定された色の置き石を置く。
@@ -513,6 +515,7 @@ class GtpClient: # pylint: disable=R0902,R0903
             color (Stone): 置く石の色。
         """
         self.board.put_handicap_stone(pos, color)
+        self.mcts.invalidate()
 
 
     def run(self) -> NoReturn: # pylint: disable=R0912,R0915

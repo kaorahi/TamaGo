@@ -44,6 +44,12 @@ class MCTSTree: # pylint: disable=R0902
         self.batch_size = batch_size
         self.cgos_mode = cgos_mode
         self.to_move = Stone.BLACK
+        self.up_to_date = False
+
+
+    def _setup_search(self, board: GoBoard, color: Stone) -> NoReturn:
+        if not self.up_to_date:
+            self._initialize_search(board, color)
 
 
     def _initialize_search(self, board: GoBoard, color: Stone) -> NoReturn:
@@ -52,6 +58,11 @@ class MCTSTree: # pylint: disable=R0902
         input_plane = generate_input_planes(board, color, 0)
         self.batch_queue.push(input_plane, [], self.current_root)
         self.process_mini_batch(board)
+        self.up_to_date = True
+
+
+    def invalidate(self):
+        self.up_to_date = False
 
 
     def search_best_move(self, board: GoBoard, color: Stone, time_manager: TimeManager, \
