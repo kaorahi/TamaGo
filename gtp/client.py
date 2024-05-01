@@ -169,7 +169,7 @@ class GtpClient: # pylint: disable=R0902,R0903
             print(f"illigal {color} {pos}")
 
         if pos.upper != "RESIGN":
-            self.board.put_stone(coord, play_color)
+            self._put_stone(coord, play_color)
 
         respond_success("")
 
@@ -183,13 +183,13 @@ class GtpClient: # pylint: disable=R0902,R0903
 
         handicap_history = self.board.get_handicap_history()
 
-        self.board.clear()
+        self._clear()
 
         for handicap in handicap_history:
             self.board.put_handicap_stone(handicap, Stone.BLACK)
 
         for (color, pos, _) in history[:-1]:
-            self.board.put_stone(pos, color)
+            self._put_stone(pos, color)
 
         respond_success("")
 
@@ -233,7 +233,7 @@ class GtpClient: # pylint: disable=R0902,R0903
                 pos = PASS
 
         if pos != RESIGN:
-            self.board.put_stone(pos, genmove_color)
+            self._put_stone(pos, genmove_color)
 
         respond_success(self.coordinate.convert_to_gtp_format(pos))
 
@@ -254,7 +254,7 @@ class GtpClient: # pylint: disable=R0902,R0903
         """clear_boardコマンドを処理する。
         盤面を初期化する。
         """
-        self.board.clear()
+        self._clear()
         self.time_manager.initialize()
         respond_success("")
 
@@ -336,12 +336,12 @@ class GtpClient: # pylint: disable=R0902,R0903
             moves (int): 手数（SGFデータの手数を超える値を指定した場合は最終局面となる）
         """
         moves = min(moves, sgf_data.get_n_moves())
-        self.board.clear()
+        self._clear()
 
         for i in range(moves):
             pos = sgf_data.get_move_data(i)
             color = sgf_data.get_color(i)
-            self.board.put_stone(pos, color)
+            self._put_stone(pos, color)
 
         respond_success("")
 
@@ -367,7 +367,7 @@ class GtpClient: # pylint: disable=R0902,R0903
 
         for handicap in handicap_list:
             pos = self.board.coordinate.convert_from_gtp_format(handicap)
-            self.board.put_handicap_stone(pos, Stone.BLACK)
+            self._put_handicap_stone(pos, Stone.BLACK)
 
         respond_success(" ".join(handicap_list))
 
@@ -476,7 +476,7 @@ class GtpClient: # pylint: disable=R0902,R0903
                 pos = PASS
 
         if pos != RESIGN:
-            self.board.put_stone(pos, genmove_color)
+            self._put_stone(pos, genmove_color)
 
         print_out(f"play {self.coordinate.convert_to_gtp_format(pos)}\n")
 
@@ -488,6 +488,31 @@ class GtpClient: # pylint: disable=R0902,R0903
         respond_success("", ongoing=True)
         print(json_str)
         print("")
+
+
+    # 碁盤の状態を変化させる場合は self.board を直接触らず以下を使う。
+    def _clear(self) -> NoReturn:
+        """盤面の初期化
+        """
+        self.board.clear()
+
+    def _put_stone(self, pos: int, color: Stone) -> NoReturn:
+        """指定された座標に指定された色の石を石を置く。
+
+        Args:
+            pos (int): 石を置く座標。
+            color (Stone): 置く石の色。
+        """
+        self.board.put_stone(pos, color)
+
+    def _put_handicap_stone(self, pos: int, color: Stone) -> NoReturn:
+        """指定された座標に指定された色の置き石を置く。
+
+        Args:
+            pos (int): 石を置く座標。
+            color (Stone): 置く石の色。
+        """
+        self.board.put_handicap_stone(pos, color)
 
 
     def run(self) -> NoReturn: # pylint: disable=R0912,R0915
