@@ -77,7 +77,7 @@ class MCTSTree: # pylint: disable=R0902
         Returns:
             int: 着手する座標。
         """
-        self._initialize_search(board, color)
+        self._setup_search(board, color)
 
         time_manager.start_timer()
 
@@ -124,7 +124,7 @@ class MCTSTree: # pylint: disable=R0902
             color (Stone): 思考する手番の色。
             analysis_query (Dict): 解析情報。
         """
-        self._initialize_search(board, color)
+        self._setup_search(board, color)
 
         # 探索を実行する
         max_visits = 999999999
@@ -195,7 +195,7 @@ class MCTSTree: # pylint: disable=R0902
         """
         original_batch_size = self.batch_size
         self.batch_size = 1
-        self._initialize_search(board, color)
+        self._setup_search(board, color)
         search_board = copy.deepcopy(board)
         while True:
             path = []
