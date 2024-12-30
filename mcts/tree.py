@@ -269,6 +269,13 @@ class MCTSTree: # pylint: disable=R0902
         self.num_nodes += 1
         return node_index
 
+    def mini_batch_inference(self, use_logit=False):
+        input_planes = torch.Tensor(np.array(self.batch_queue.input_plane))
+        if use_logit:
+            raw_policy, value_data = self.network.inference_with_policy_logits(input_planes)
+        else:
+            raw_policy, value_data = self.network.inference(input_planes)
+        return raw_policy, value_data
 
     def process_mini_batch(self, board: GoBoard, use_logit: bool=False): # pylint: disable=R0914
         """ニューラルネットワークの入力をミニバッチ処理して、計算結果を探索結果に反映する。
@@ -277,12 +284,7 @@ class MCTSTree: # pylint: disable=R0902
             board (GoBoard): 碁盤の情報。
             use_logit (bool): Policyの出力をlogitにするフラグ
         """
-        input_planes = torch.Tensor(np.array(self.batch_queue.input_plane))
-
-        if use_logit:
-            raw_policy, value_data = self.network.inference_with_policy_logits(input_planes)
-        else:
-            raw_policy, value_data = self.network.inference(input_planes)
+        raw_policy, value_data = self.mini_batch_inference(use_logit)
 
         policy_data = []
         for policy in raw_policy:
