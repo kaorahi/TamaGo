@@ -331,6 +331,7 @@ class GtpClient: # pylint: disable=R0902,R0903
         """
         moves = min(moves, sgf_data.get_n_moves())
         self.board.clear()
+        self.board.set_komi(sgf_data.komi)
 
         for i in range(moves):
             pos = sgf_data.get_move_data(i)
