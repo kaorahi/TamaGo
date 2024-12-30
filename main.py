@@ -2,7 +2,11 @@
 """GTPクライアントのエントリーポイント。
 """
 import os
+import sys
 import click
+
+if '--katago-model' in sys.argv:
+    import katago.monkey_patch
 
 from gtp.client import GtpClient
 from board.constant import BOARD_SIZE
@@ -48,10 +52,12 @@ default_model_path = os.path.join("model", "model.bin")
     help="lz-analyzeの出力をMCTSアニメーションに差しかえて、系列ごとに指定秒停止。")
 @click.option('--animation-move-wait', type=click.FLOAT, default=-1.0, \
     help="lz-analyzeの出力をMCTSアニメーションに差しかえて、一手ごとに指定秒停止。")
+@click.option('--katago-model', type=click.STRING, default=None, \
+    help="KataGoのモデルファイルのパスを指定し、modelと差し替えて探索。")
 def gtp_main(size: int, superko: bool, model:str, use_gpu: bool, sequential_halving: bool, \
     policy_move: bool, komi: float, visits: int, strict_visits: int, const_time: float, time: float, \
     batch_size: int, tree_size: int, cgos_mode: bool, \
-    animation_pv_wait: float, animation_move_wait: float):
+    animation_pv_wait: float, animation_move_wait: float, katago_model: str):
     """GTPクライアントの起動。
 
     Args:
@@ -71,6 +77,7 @@ def gtp_main(size: int, superko: bool, model:str, use_gpu: bool, sequential_halv
         cgos_mode (bool): 全ての石を打ち上げるまでパスしないモード設定。デフォルトはFalse。
         animation_pv_wait (float): lz-analyzeの出力をMCTSアニメーションに差しかえて、系列ごとに指定秒停止。
         animation_move_wait (float): lz-analyzeの出力をMCTSアニメーションに差しかえて、一手ごとに指定秒停止。
+        katago-model (str): KataGoのモデルファイルのパスを指定し、modelと差し替えて探索。
     """
     mode = TimeControl.CONSTANT_PLAYOUT
 
@@ -86,6 +93,8 @@ def gtp_main(size: int, superko: bool, model:str, use_gpu: bool, sequential_halv
     client = GtpClient(size, superko, os.path.join(program_dir, model), use_gpu, policy_move, \
         sequential_halving, komi, mode, visits, const_time, time, batch_size, tree_size, \
         cgos_mode, animation_pv_wait, animation_move_wait)
+    if katago_model:
+        client.mcts.load_katago_model(katago_model, size, use_gpu)
     client.run()
 
 
