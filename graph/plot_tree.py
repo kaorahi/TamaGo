@@ -18,9 +18,16 @@ from mcts.dump import enrich_mcts_dict
 @click.command()
 @click.argument('input_json_path', type=click.Path(exists=True))
 @click.argument('output_image_path', type=click.Path())
+@click.option('--color-emphasis', type=click.FLOAT, default=1.5, \
+    help="色の強調度合。デフォルトは1.5。")
 @click.option('--around-pv', type=click.BOOL, default=False, \
     help="主分岐のまわりのみ表示するフラグ。デフォルトはFalse。")
-def plot_tree_main(input_json_path: str, output_image_path: str, around_pv: bool):
+def plot_tree_main(
+        input_json_path: str,
+        output_image_path: str,
+        color_emphasis: float,
+        around_pv: bool,
+):
     # docstring 中の \b は click による rewrapping の抑止（入れないと改行が無視される）
     # https://click.palletsprojects.com/en/8.1.x/documentation/#preventing-rewrapping
     """MCTSツリーを可視化。
@@ -29,6 +36,8 @@ def plot_tree_main(input_json_path: str, output_image_path: str, around_pv: bool
     Args:
         input_json_path (str): MCTSの状態を表すJSONファイルのパス。
         output_image_path (str): 可視化結果を保存する画像ファイルのパス。
+        around_pv (bool): 最善応手系列の周辺のみ表示するフラグ。デフォルトはFalse。
+        color_emphasis (float): 色の強調度合。デフォルトは1.5。
         around_pv (bool): 最善応手系列の周辺のみ表示するフラグ。デフォルトはFalse。
 
 \b
@@ -80,8 +89,8 @@ def plot_tree_main(input_json_path: str, output_image_path: str, around_pv: bool
         visits = item['visits']
         winrate = item['mean_black_winrate']
         raw_winrate = item['raw_black_winrate']
-        node_color = get_color(winrate, colormap)
-        border_color = get_color(raw_winrate, colormap)
+        node_color = get_color(winrate, colormap, color_emphasis)
+        border_color = get_color(raw_winrate, colormap, color_emphasis)
         text_color = 'black' if abs(winrate - 0.5) < 0.25 else 'white'
         # 黒の着手（次が白番）は□、白の着手は○でノードを描く
         shape = 'square' if item["to_move"] == 'white' else 'circle'
@@ -111,9 +120,8 @@ def plot_tree_main(input_json_path: str, output_image_path: str, around_pv: bool
 
     dot.render(output_image_path, format='svg', view=False, cleanup=True)
 
-def get_color(value, colormap):
-    emphasis = 1.5  # 色の違いを強調
-    v = 0.5 + (value - 0.5) * emphasis
+def get_color(value, colormap, color_emphasis):
+    v = 0.5 + (value - 0.5) * color_emphasis
     return mcolors.to_hex(colormap(v))
 
 def get_size(visits, shape):
