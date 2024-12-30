@@ -13,6 +13,10 @@ import matplotlib.colors as mcolors
 from pathlib import Path
 sys.path.append(str(Path(__file__).parent.parent))
 
+from board.set_constant import respect_size_option
+respect_size_option(sys.argv)
+
+from board.constant import BOARD_SIZE
 from mcts.dump import enrich_mcts_dict
 
 @click.command()
@@ -22,11 +26,15 @@ from mcts.dump import enrich_mcts_dict
     help="色の強調度合。デフォルトは1.5。")
 @click.option('--around-pv', type=click.BOOL, default=False, \
     help="主分岐のまわりのみ表示するフラグ。デフォルトはFalse。")
+# --size は実際には上の respect_size_option で処理される
+@click.option('--size', type=click.IntRange(2, BOARD_SIZE), default=BOARD_SIZE, \
+    help=f"碁盤のサイズを指定。デフォルトは{BOARD_SIZE}。")
 def plot_tree_main(
         input_json_path: str,
         output_image_path: str,
         color_emphasis: float,
         around_pv: bool,
+        size: int,
 ):
     # docstring 中の \b は click による rewrapping の抑止（入れないと改行が無視される）
     # https://click.palletsprojects.com/en/8.1.x/documentation/#preventing-rewrapping
@@ -39,6 +47,7 @@ def plot_tree_main(
         around_pv (bool): 最善応手系列の周辺のみ表示するフラグ。デフォルトはFalse。
         color_emphasis (float): 色の強調度合。デフォルトは1.5。
         around_pv (bool): 最善応手系列の周辺のみ表示するフラグ。デフォルトはFalse。
+        size (int): 碁盤のサイズを指定。デフォルトはBOARD_SIZE。
 
 \b
     Example:
